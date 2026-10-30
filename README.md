@@ -1,5 +1,10 @@
 # Infrastructure Alert Intelligence Dashboard
 
+> **Engineering status (October 2026): research/portfolio prototype, not a production deployment.**
+> API data is currently backed by mock fixtures in several endpoints. The deployment-risk model is trained on synthetic data by default, and the original validation report contains reported performance figures without a committed reproducible benchmark harness. Do not interpret them as independently verified production SLAs.
+> This repository now has graph regression tests, Flask smoke tests, a liveness route, and a portable test runner; run the tests in your own environment before relying on the results.
+
+
 ![image](https://github.com/user-attachments/assets/d848e862-0ab3-44ec-b7f1-9e85cb945186)
 
 ## Overview
@@ -226,3 +231,42 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - Material-UI for the component library
 - Flask for the lightweight backend framework
 - Kafka for real-time messaging
+
+
+## Reproducible engineering checks
+
+Use a Python environment compatible with the versions pinned in `backend/requirements.txt` (the dependencies were originally pinned in 2022; Python 3.9 is a sensible starting point). From the repository root:
+
+```bash
+python -m pip install -r backend/requirements.txt
+bash tests/run_tests.sh
+```
+
+For a backend development server:
+
+```bash
+cd backend
+export FLASK_APP=app:create_app
+python -m flask run --port 5000
+curl http://localhost:5000/api/health
+```
+
+Frontend (requires Node.js/npm and an installed dependency tree):
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The included regression tests cover dependency direction, disconnected nodes, missing graph sources, failure-domain grouping, infrastructure health propagation, and a Flask application smoke check.
+
+## Known limitations and evidence boundaries
+
+- The graph-analysis fixture data is hardcoded in `backend/app/services/analysis_service.py`; this is not yet a database-backed operational system.
+- `backend/app/services/prediction_service.py` trains on generated samples if no trained model exists, and fills historical metrics with mock values. Its predictions are demonstrations and should not be treated as validated risk estimates.
+- Kafka integration is implemented in code but end-to-end production reliability, retries, backpressure, and the referenced WebSocket data path require independent verification.
+- Existing latency and scalability numbers in `docs/validation_report.md` are **reported by that document**, not independently reproduced by the new tests.
+- Authentication, access control, security testing, and integration/deployment readiness have not been established by this improvement pass.
+
+See [Engineering Review](docs/ENGINEERING_REVIEW.md) for concrete follow-up work and verification criteria.
