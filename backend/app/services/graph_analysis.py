@@ -1,4 +1,5 @@
 import networkx as nx
+from datetime import datetime
 import numpy as np
 from typing import List, Dict, Set, Tuple, Any
 from app.models.infrastructure import InfrastructureComponent, ComponentStatus
@@ -66,24 +67,11 @@ class GraphAnalysis:
         # Build graph
         G = GraphAnalysis.build_graph(components)
         
-        # Find affected components using BFS
-        affected_components = set()
-        
-        # BFS to find all components that depend on the source component
-        # (i.e., components that would be affected if the source fails)
-        for node in G.nodes():
-            if node == source_id:
-                continue
-                
-            # Check if there's a path from this node to the source
-            # If yes, this node depends on the source
-            try:
-                path = nx.shortest_path(G, node, source_id)
-                affected_components.add(node)
-            except nx.NetworkXNoPath:
-                continue
-        
-        # Add the source component itself
+        # Edges point from dependents to dependencies. Reversing the graph
+        # allows one BFS from the failed dependency to all affected services.
+        # This is O(V + E), rather than running a path search for every node.
+        reversed_graph = G.reverse(copy=False)
+        affected_components = set(nx.descendants(reversed_graph, source_id))
         affected_components.add(source_id)
         
         # Calculate impact score based on:
@@ -112,16 +100,9 @@ class GraphAnalysis:
         
         criticality_score = criticality_score / len(affected_components) if affected_components else 0
         
-        # Calculate dependency depth score
-        max_depth = 0
-        for node in affected_components:
-            if node == source_id:
-                continue
-            try:
-                path = nx.shortest_path(G, node, source_id)
-                max_depth = max(max_depth, len(path) - 1)
-            except nx.NetworkXNoPath:
-                continue
+        # Shortest-path depth from failed dependency to furthest affected node.
+        distances = nx.single_source_shortest_path_length(reversed_graph, source_id)
+        max_depth = max(distances.values(), default=0)
         
         depth_score = min(max_depth / 5, 1.0)  # Normalize depth score (max depth of 5)
         
@@ -134,11 +115,11 @@ class GraphAnalysis:
         
         # Use weakly connected components as failure domains
         for domain in nx.weakly_connected_components(subgraph):
-            failure_domains.append(list(domain))
+            failure_domains.append(sorted(domain))
         
         return {
             "source_component": source_id,
-            "affected_components": list(affected_components),
+            "affected_components": sorted(affected_components),
             "failure_domains": failure_domains,
             "impact_score": round(impact_score, 2),
             "timestamp": datetime.utcnow().isoformat()
@@ -299,23 +280,14 @@ class GraphAnalysis:
             for prob_id in problematic:
                 affected = set()
                 
-                # Find components that depend on this problematic component
-                for node in G.nodes():
-                    if node == prob_id:
-                        continue
-                    
-                    try:
-                        path = nx.shortest_path(G, node, prob_id)
-                        affected.add(node)
-                    except nx.NetworkXNoPath:
-                        continue
-                
+                # Dependencies point inward, so traverse the reversed graph.
+                affected.update(nx.descendants(G.reverse(copy=False), prob_id))
                 affected.add(prob_id)
                 all_affected.update(affected)
                 
                 # Add as a failure domain if it has affected components
                 if affected:
-                    failure_domains.append(list(affected))
+                    failure_domains.append(sorted(affected))
             
             # Calculate impact score
             total_components = len(components)
@@ -344,7 +316,7 @@ class GraphAnalysis:
             
             return {
                 "source_component": "infrastructure",
-                "affected_components": list(all_affected),
+                "affected_components": sorted(all_affected),
                 "failure_domains": failure_domains,
                 "impact_score": round(impact_score, 2),
                 "timestamp": datetime.utcnow().isoformat()
