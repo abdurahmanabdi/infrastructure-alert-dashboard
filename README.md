@@ -1,5 +1,3 @@
-<img width="1881" height="970" alt="Screenshot 2026-10-30 170434" src="https://github.com/user-attachments/assets/9673b6e1-d7fc-47f5-934c-9d17ee1de157" />
-
 Infrastructure Alert Intelligence Dashboard
 
 > **Engineering status (October 2026): research/portfolio prototype, not a production deployment.**
