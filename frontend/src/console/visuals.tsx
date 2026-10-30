@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   AccountTreeOutlined, CheckCircleOutlineRounded, ErrorOutlineRounded,
   HubOutlined, LayersOutlined, RocketLaunchOutlined,
