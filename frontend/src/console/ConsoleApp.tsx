@@ -317,7 +317,7 @@ export default function ConsoleApp() {
   const stats = summarize(activeSnapshot);
   const selectedIncident = activeSnapshot.incidents.find(item => item.id === selectedIncidentId) || null;
   const selectedIncidentService = activeSnapshot.services.find(item => item.id === selectedIncident?.serviceId);
-  const showApp = !loading && !error;
+  const showApp = !loading && !error && activeSnapshot.source === source;
   const apiLabel = source === 'demo' ? 'Demo data' : 'API · fixture-backed';
 
   return (
@@ -335,7 +335,7 @@ export default function ConsoleApp() {
             <NavLink key={item.path} end={item.path === '/'} to={item.path} className={({ isActive }) => 'nav-item' + (isActive ? ' active' : '')}>
               <span className="nav-item-icon">{item.icon}</span>
               <span>{item.label}</span>
-              {item.view === 'incidents' && stats.open > 0 && <span className="nav-count">{stats.open}</span>}
+              {item.view === 'incidents' && showApp && stats.open > 0 && <span className="nav-count">{stats.open}</span>}
             </NavLink>
           ))}
         </nav>
@@ -356,7 +356,7 @@ export default function ConsoleApp() {
           </div>
           <div className="topbar-right">
             <span className={'source-pill source-' + source}><span className="source-light" />{apiLabel}</span>
-            <span className="topbar-time">Updated {relativeTime(activeSnapshot.retrievedAt)}</span>
+            {showApp && <span className="topbar-time">Updated {relativeTime(activeSnapshot.retrievedAt)}</span>}
             <button className="icon-button refresh-button" type="button"
               aria-label={source === 'demo' ? 'Reset demo data' : 'Refresh API data'}
               title={source === 'demo' ? 'Reset demo data' : 'Refresh API data'}
