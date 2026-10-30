@@ -41,6 +41,11 @@ def create_app(config_name=None):
     api.add_namespace(analysis_ns, path='/api/analysis')
     api.add_namespace(predictions_ns, path='/api/predictions')
     
+    @app.get('/api/health')
+    def health():
+        """Lightweight liveness probe; no database or Kafka dependencies."""
+        return {'status': 'ok', 'service': 'infrastructure-alert-dashboard'}, 200
+
     # Register error handlers
     from app.utils.error_handlers import register_error_handlers
     register_error_handlers(app)
