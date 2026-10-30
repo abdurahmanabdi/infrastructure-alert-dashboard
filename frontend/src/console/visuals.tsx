@@ -4,7 +4,7 @@ import {
   HubOutlined, LayersOutlined, RocketLaunchOutlined,
 } from '@mui/icons-material';
 import {
-  GraphPosition, Service, Severity, ServiceStatus, TrendPoint, graphPositions,
+  GraphPosition, Service, Severity, TrendPoint, graphPositions,
 } from './model';
 
 export function SeverityBadge({ severity }: { severity: Severity }) {
